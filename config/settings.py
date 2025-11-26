@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-v^msv$*^g-a^z8wu@mj&)ryfcx9^dw-c!vhs5+grf4@-r+4s^i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -121,3 +121,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Aumenta o limite de dados permitidos no POST (por causa das imagens Base64)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880 # 5MB
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000 # Para garantir que todos os campos passem

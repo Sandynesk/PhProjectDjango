@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel do Professor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen p-8">
+    
+    <div class="max-w-7xl mx-auto">
+        <!-- Cabeçalho -->
+        <div class="flex justify-between items-center mb-8 pb-6 border-b border-gray-700">
+            <h1 class="text-3xl font-bold text-blue-400">📊 Relatório de Desempenho</h1>
+            <a href="/admin/" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm">Voltar ao Admin</a>
+        </div>
+
+        <!-- Cartões de Resumo -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                <h3 class="text-gray-400 text-sm uppercase font-bold">Total de Entregas</h3>
+                <p class="text-4xl font-black mt-2">{{ total_alunos }}</p>
+            </div>
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                <h3 class="text-gray-400 text-sm uppercase font-bold">Média da Turma</h3>
+                <p class="text-4xl font-black mt-2 text-yellow-400">{{ media_geral }}</p>
+            </div>
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                <h3 class="text-gray-400 text-sm uppercase font-bold">Status</h3>
+                <p class="text-4xl font-black mt-2 text-green-400">Ativo</p>
+            </div>
+        </div>
+
+        <!-- Gráfico -->
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-2xl">
+            <h2 class="text-xl font-bold mb-6">Análise por Questão</h2>
+            <div class="relative h-96 w-full">
+                <canvas id="graficoDesempenho"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('graficoDesempenho').getContext('2d');
+        
+        // Dados vindos do Python
+        const labels = {{ labels|safe }};
+        const acertos = {{ data_acertos|safe }};
+        const erros = {{ data_erros|safe }};
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels.map(l => l.substring(0, 20) + '...'), // Corta títulos longos
+                datasets: [
+                    {
+                        label: 'Acertos',
+                        data: acertos,
+                        backgroundColor: 'rgba(34, 197, 94, 0.6)',
+                        borderColor: 'rgba(34, 197, 94, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Erros',
+                        data: erros,
+                        backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#374151' }, ticks: { color: '#9CA3AF' } },
+                    x: { grid: { display: false }, ticks: { color: '#9CA3AF' } }
+                },
+                plugins: {
+                    legend: { labels: { color: 'white' } }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
