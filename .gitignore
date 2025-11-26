@@ -1,0 +1,15 @@
+Ignorar arquivos do sistema
+
+pycache/
+*.py[cod]
+*$py.class
+
+Ignorar ambiente virtual (MUITO IMPORTANTE)
+
+venv/
+env/
+.env
+
+Ignorar banco de dados (Para não apagar os dados de produção)
+
+db.sqlite3
