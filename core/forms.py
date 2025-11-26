@@ -2,23 +2,28 @@ from django import forms
 from .banco_questoes import QUESTOES
 
 class Av2Form(forms.Form):
-    # Gerando os campos dinamicamente
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Para cada questão.
         for questao in QUESTOES:
-            field_name = questao['id']
+            q_id = questao['id']
             
-            # Criamos um campo de Múltipla Escolha
-            self.fields[field_name] = forms.ChoiceField(
+            # 1. Campo da Pergunta (Radio)
+            self.fields[q_id] = forms.ChoiceField(
                 label=questao['titulo'],
                 choices=questao['opcoes'],
                 widget=forms.RadioSelect(attrs={
                     'class': 'mb-2 text-gray-300 focus:ring-blue-500'
                 })
             )
-            # Adicionamos atributos extras para usar no HTML (Contexto e Fórmula LaTeX)
-            self.fields[field_name].contexto = questao['contexto']
-            self.fields[field_name].formula = questao['formula']
-            self.fields[field_name].categoria = questao['categoria']
+            # Metadados para o HTML
+            self.fields[q_id].contexto = questao['contexto']
+            self.fields[q_id].formula = questao['formula']
+            self.fields[q_id].categoria = questao['categoria']
+
+            # 2. Campo do Rascunho (Escondido, exclusivo para essa questão)
+            # Nome será tipo: rascunho_lim_a, rascunho_der_b...
+            self.fields[f'rascunho_{q_id}'] = forms.CharField(
+                required=False, 
+                widget=forms.HiddenInput()
+            )

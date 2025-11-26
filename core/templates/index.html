@@ -7,26 +7,22 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script>
-        MathJax = {
-            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
-        };
+        MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        /* Ajuste para radio buttons */
         input[type='radio'] { transform: scale(1.2); margin-right: 8px; }
     </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen relative {% if not resultado %}overflow-hidden{% endif %}">
 
-    <div id="quiz-container" class="transition-all duration-700 p-4 max-w-4xl mx-auto {% if not resultado %}blur-sm pointer-events-none{% endif %}">
+    <div id="quiz-container" class="transition-all duration-700 p-4 max-w-4xl mx-auto pb-24 {% if not resultado %}blur-sm pointer-events-none{% endif %}">
         
         <div class="bg-gray-800 rounded-xl border border-gray-700 p-8 shadow-2xl opacity-50 transition-opacity duration-700" id="form-wrapper">
             
             <div class="flex justify-between items-center mb-6 border-b border-gray-600 pb-4">
                 <h2 class="text-3xl font-bold text-blue-400">📐 Prova de Cálculo I</h2>
-                <span class="text-sm text-gray-400">Limites, Derivadas e Integrais</span>
             </div>
 
             {% if resultado %}
@@ -34,19 +30,53 @@
                     <h3 class="text-3xl font-bold mb-2">Nota: {{ resultado.nota }}</h3>
                     <p class="text-xl">{{ resultado.texto }}</p>
                 </div>
-            {% endif %}
 
-            <form method="post">
+                <h3 class="text-2xl font-bold mb-4 text-gray-300">Gabarito Detalhado:</h3>
+                <div class="space-y-6">
+                    {% for detalhe in resultado.detalhes %}
+                    <div class="bg-gray-700/50 p-4 rounded border {% if detalhe.acertou %}border-green-500{% else %}border-red-500{% endif %}">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold">{{ detalhe.titulo }}</h4>
+                            <span class="text-2xl">{% if detalhe.acertou %}✅{% else %}❌{% endif %}</span>
+                        </div>
+                        
+                        {% if detalhe.desenho %}
+                        <div class="mt-4">
+                            <p class="text-xs text-gray-400 uppercase mb-1">Seu Cálculo:</p>
+                            <img src="{{ detalhe.desenho }}" class="max-w-sm w-full rounded bg-white border-4 border-gray-600">
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-8 text-center">
+                    <a href="/" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-lg">Tentar Novamente</a>
+                </div>
+            {% else %}
+
+            <form method="post" id="form-prova">
                 {% csrf_token %}
                 
-                {% for field in form %}
-                <div class="mb-8 bg-gray-700/30 p-6 rounded-lg border border-gray-600">
+                <div class="hidden">
+                    {% for hidden in form.hidden_fields %}
+                        {{ hidden }}
+                    {% endfor %}
+                </div>
+                
+                {% for field in form.visible_fields %}
+                <div class="mb-8 bg-gray-700/30 p-6 rounded-lg border border-gray-600 relative group">
                     
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="bg-blue-900 text-blue-200 text-xs px-2 py-1 rounded uppercase font-bold tracking-wide">
-                            {{ field.field.categoria }}
-                        </span>
-                        <h3 class="text-xl font-semibold text-white">{{ field.label }}</h3>
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-900 text-blue-200 text-xs px-2 py-1 rounded uppercase font-bold tracking-wide">
+                                {{ field.field.categoria }}
+                            </span>
+                            <h3 class="text-xl font-semibold text-white">{{ field.label }}</h3>
+                        </div>
+                        
+                        <button type="button" onclick="abrirRascunho('{{ field.name }}')" class="bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-bold py-1 px-3 rounded flex items-center gap-1 transition">
+                            ✏️ Calcular
+                        </button>
                     </div>
 
                     <p class="text-gray-400 mb-4 text-sm">{{ field.field.contexto }}</p>
@@ -65,10 +95,6 @@
                             </div>
                         {% endfor %}
                     </div>
-
-                    {% if field.errors %}
-                        <p class="text-red-400 text-sm mt-2">⚠ {{ field.errors.0 }}</p>
-                    {% endif %}
                 </div>
                 {% endfor %}
 
@@ -76,34 +102,104 @@
                     Entregar Prova 📝
                 </button>
             </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="rascunho-modal" class="hidden fixed inset-0 z-[90] bg-gray-900/95 backdrop-blur-md flex flex-col items-center justify-center p-4">
+        <div class="bg-gray-800 w-full max-w-5xl p-3 rounded-t-xl border border-gray-600 flex justify-between items-center">
+            <div>
+                <h3 class="text-white font-bold ml-4 inline">📝 Rascunho da Questão</h3>
+                <span id="lbl-questao-atual" class="text-xs text-yellow-400 ml-2 font-mono"></span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="limparCanvas()" type="button" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded text-sm transition">🗑️ Limpar</button>
+                <button onclick="salvarEFechar()" type="button" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded text-sm transition">💾 Salvar e Fechar</button>
+            </div>
+        </div>
+        <div class="relative w-full max-w-5xl h-[80vh] bg-white rounded-b-xl overflow-hidden cursor-crosshair border border-gray-600 shadow-2xl">
+            <canvas id="lousa" class="w-full h-full block"></canvas>
         </div>
     </div>
 
     {% if not resultado %}
-    <div id="welcome-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm transition-all duration-500">
+    <div id="welcome-overlay" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm transition-all duration-500">
         <div class="text-center p-8 bg-gray-800 border border-gray-600 rounded-2xl shadow-2xl max-w-md mx-4">
-            <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-6">
-                AV2
-            </h1>
-            <p class="text-gray-300 mb-8 text-lg">Prepare-se para fritar os neurônios.</p>
-            <button onclick="liberarProva()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-full text-xl transition shadow-lg shadow-blue-500/30">
-                Iniciar Agora
-            </button>
+            <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-6">AV2</h1>
+            <button onclick="liberarProva()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-full text-xl transition shadow-lg">Iniciar</button>
         </div>
     </div>
     {% endif %}
 
     <script>
+        // --- LÓGICA GERAL ---
         function liberarProva() {
-            const overlay = document.getElementById('welcome-overlay');
-            const container = document.getElementById('quiz-container');
-            const wrapper = document.getElementById('form-wrapper');
-
-            overlay.style.opacity = '0';
-            container.classList.remove('blur-sm', 'pointer-events-none');
-            wrapper.classList.remove('opacity-50');
-            setTimeout(() => { overlay.style.display = 'none'; }, 500);
+            document.body.classList.remove('overflow-hidden'); 
+            document.getElementById('welcome-overlay').style.opacity = '0';
+            document.getElementById('quiz-container').classList.remove('blur-sm', 'pointer-events-none');
+            document.getElementById('form-wrapper').classList.remove('opacity-50');
+            setTimeout(() => { document.getElementById('welcome-overlay').style.display = 'none'; }, 500);
         }
+
+        // --- LÓGICA DO QUADRO POR QUESTÃO ---
+        const modal = document.getElementById('rascunho-modal');
+        const canvas = document.getElementById('lousa');
+        const ctx = canvas.getContext('2d');
+        const lblQuestao = document.getElementById('lbl-questao-atual');
+        
+        let desenhando = false;
+        let questaoAtualID = null; // Guarda qual questão estamos editando
+
+        function abrirRascunho(idQuestao) {
+            questaoAtualID = idQuestao;
+            lblQuestao.innerText = `(ID: ${idQuestao})`;
+            modal.classList.remove('hidden');
+            
+            // Ajusta tamanho
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#000000';
+
+            // Tenta carregar desenho anterior se existir
+            // O Django gera o ID do hidden input como: id_rascunho_NOME
+            const inputHidden = document.getElementById(`id_rascunho_${idQuestao}`);
+            if (inputHidden && inputHidden.value) {
+                const img = new Image();
+                img.onload = function() { ctx.drawImage(img, 0, 0); };
+                img.src = inputHidden.value;
+            }
+        }
+
+        function salvarEFechar() {
+            if (questaoAtualID) {
+                // Salva o que está no canvas dentro do input hidden daquela questão
+                const inputHidden = document.getElementById(`id_rascunho_${questaoAtualID}`);
+                inputHidden.value = canvas.toDataURL('image/png');
+            }
+            modal.classList.add('hidden');
+        }
+
+        function limparCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // --- EVENTOS DE DESENHO (Mouse e Touch) ---
+        canvas.addEventListener('mousedown', (e) => { desenhando = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); });
+        canvas.addEventListener('mousemove', (e) => { if(desenhando){ ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); } });
+        canvas.addEventListener('mouseup', () => desenhando = false);
+        
+        // Touch
+        function getTouchPos(e) {
+            const r = canvas.getBoundingClientRect();
+            return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
+        }
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); desenhando = true; const p = getTouchPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, {passive:false});
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if(desenhando){ const p = getTouchPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); } }, {passive:false});
+        canvas.addEventListener('touchend', () => desenhando = false);
+
     </script>
 </body>
 </html>

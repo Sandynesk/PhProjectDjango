@@ -1,4 +1,3 @@
-# core/views.py
 from django.shortcuts import render
 from .forms import Av2Form
 from .banco_questoes import QUESTOES
@@ -15,32 +14,33 @@ def home(request):
             total = len(QUESTOES)
             respostas_detalhadas = []
 
-            # Loop para corrigir cada questão
             for questao in QUESTOES:
-                id_q = questao['id']
-                resposta_usuario = form.cleaned_data.get(id_q)
-                resposta_certa = questao['correta']
+                q_id = questao['id']
+                resposta_usuario = form.cleaned_data.get(q_id)
                 
-                acertou = (resposta_usuario == resposta_certa)
+                # Pega o rascunho específico desta questão
+                desenho_usuario = form.cleaned_data.get(f'rascunho_{q_id}')
+                
+                acertou = (resposta_usuario == questao['correta'])
                 if acertou:
                     acertos += 1
                 
-                # Guarda o detalhe para mostrar quais errou/acertou
                 respostas_detalhadas.append({
                     'titulo': questao['titulo'],
                     'acertou': acertou,
-                    'formula': questao['formula']
+                    'formula': questao['formula'],
+                    'desenho': desenho_usuario  # Guardamos o desenho no detalhe da questão
                 })
 
             nota_final = (acertos / total) * 10
             
-            # Define cor e mensagem baseada na nota
+            # Definição da mensagem/cor
             if nota_final >= 7:
-                cor, msg = "bg-green-600", "Aprovado! Mandou bem no Cálculo. 📐"
+                cor, msg = "bg-green-600", "Aprovado! 📐"
             elif nota_final >= 4:
-                cor, msg = "bg-yellow-600", "Na trave! Precisa revisar derivadas. 📚"
+                cor, msg = "bg-yellow-600", "Na trave! 📚"
             else:
-                cor, msg = "bg-red-600", "Reprovado. Vejo você na final. 😢"
+                cor, msg = "bg-red-600", "Reprovado. 😢"
 
             resultado = {
                 'nota': f"{nota_final:.1f}",
@@ -49,7 +49,6 @@ def home(request):
                 'detalhes': respostas_detalhadas
             }
             
-            # Retorna com o resultado e um formulário limpo
             return render(request, 'index.html', {'form': Av2Form(), 'resultado': resultado})
 
     return render(request, 'index.html', {'form': form})
